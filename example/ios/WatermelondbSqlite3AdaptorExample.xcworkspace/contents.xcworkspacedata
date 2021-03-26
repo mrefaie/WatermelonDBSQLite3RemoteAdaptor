@@ -2,7 +2,7 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:WatermelondbSqlite3AdaptorExample.xcodeproj">
+      location = "group:WatermelondbSqlite3AdapterExample.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">

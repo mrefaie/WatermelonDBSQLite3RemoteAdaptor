@@ -1,21 +1,21 @@
-# watermelondb-sqlite3-adaptor
+# watermelondb-sqlite3-adapter
 
-Sqlite3 Adaptor For WatermelonDB
+Sqlite3 Adapter For WatermelonDB
 
 ## Installation
 
 ```sh
-npm install watermelondb-sqlite3-adaptor
+npm install watermelondb-sqlite3-adapter
 ```
 
 ## Usage
 
 ```js
-import WatermelondbSqlite3Adaptor from "watermelondb-sqlite3-adaptor";
+import WatermelondbSqlite3Adapter from 'watermelondb-sqlite3-adapter';
 
 // ...
 
-const result = await WatermelondbSqlite3Adaptor.multiply(3, 7);
+const result = await WatermelondbSqlite3Adapter.multiply(3, 7);
 ```
 
 ## Contributing

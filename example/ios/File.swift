@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  WatermelondbSqlite3AdaptorExample
+//  WatermelondbSqlite3AdapterExample
 //
 
 import Foundation

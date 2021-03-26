@@ -1,4 +1,4 @@
-package com.example.watermelondbsqlite3adaptor;
+package com.example.watermelondbsqlite3adapter;
 
 import com.facebook.react.ReactActivity;
 
@@ -10,6 +10,6 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "WatermelondbSqlite3AdaptorExample";
+    return "WatermelondbSqlite3AdapterExample";
   }
 }

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "watermelondb-sqlite3-adaptor": ["./src/index"]
+      "watermelondb-sqlite3-adapter": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

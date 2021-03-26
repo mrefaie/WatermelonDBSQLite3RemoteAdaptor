@@ -1,7 +1,7 @@
 {
-  "name": "watermelondb-sqlite3-adaptor",
+  "name": "watermelondb-sqlite3-adapter",
   "version": "0.1.0",
-  "description": "Sqlite3 Adaptor For WatermelonDB",
+  "description": "Sqlite3 Adapter For WatermelonDB",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/src/index.d.ts",
@@ -13,7 +13,7 @@
     "android",
     "ios",
     "cpp",
-    "watermelondb-sqlite3-adaptor.podspec",
+    "watermelondb-sqlite3-adapter.podspec",
     "!lib/typescript/example",
     "!android/build",
     "!ios/build",
@@ -36,13 +36,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/mrefaie/watermelondb-sqlite3-adaptor",
+  "repository": "https://github.com/mrefaie/watermelondb-sqlite3-adapter",
   "author": "Mohamed El-Refaie <mgamal@sahaab.com> (https://github.com/mrefaie)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mrefaie/watermelondb-sqlite3-adaptor/issues"
+    "url": "https://github.com/mrefaie/watermelondb-sqlite3-adapter/issues"
   },
-  "homepage": "https://github.com/mrefaie/watermelondb-sqlite3-adaptor#readme",
+  "homepage": "https://github.com/mrefaie/watermelondb-sqlite3-adapter#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
@@ -68,8 +68,10 @@
     "typescript": "^4.1.3"
   },
   "peerDependencies": {
+    "@nozbe/watermelondb": "*",
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-tcp-socket": "^4.5.5"
   },
   "jest": {
     "preset": "react-native",
@@ -149,5 +151,12 @@
         }
       ]
     ]
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.12.18",
+    "rambdax": "^7.2.0",
+    "react-native-tcp-socket": "^5.2.0",
+    "react-native-uuid": "^1.4.9",
+    "sql-escape-string": "^1.1.0"
   }
 }

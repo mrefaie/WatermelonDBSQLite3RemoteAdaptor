@@ -1,6 +1,6 @@
 {
-  "name": "watermelondb-sqlite3-adaptor-example",
-  "description": "Example app for watermelondb-sqlite3-adaptor",
+  "name": "watermelondb-sqlite3-adapter-example",
+  "description": "Example app for watermelondb-sqlite3-adapter",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -9,11 +9,16 @@
     "start": "react-native start"
   },
   "dependencies": {
+    "@nozbe/watermelondb": "^0.20.0",
+    "@nozbe/with-observables": "^1.0.8",
     "react": "16.13.1",
-    "react-native": "0.63.4"
+    "react-native": "0.63.4",
+    "react-native-network-info": "^5.2.1",
+    "react-native-tcp-socket": "^4.5.5"
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-decorators": "^7.12.13",
     "@babel/runtime": "^7.12.5",
     "babel-plugin-module-resolver": "^4.0.0",
     "metro-react-native-babel-preset": "^0.64.0"

@@ -49,9 +49,9 @@ Remember to add tests for your change if possible. Run the unit tests by:
 yarn test
 ```
 
-To edit the Objective-C files, open `example/ios/WatermelondbSqlite3AdaptorExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > watermelondb-sqlite3-adaptor`.
+To edit the Objective-C files, open `example/ios/WatermelondbSqlite3AdapterExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > watermelondb-sqlite3-adapter`.
 
-To edit the Kotlin files, open `example/android` in Android studio and find the source files at `watermelondbsqlite3adaptor` under `Android`.
+To edit the Kotlin files, open `example/android` in Android studio and find the source files at `watermelondbsqlite3adapter` under `Android`.
 
 ### Commit message convention
 
