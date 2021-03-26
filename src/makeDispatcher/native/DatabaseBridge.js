@@ -19,6 +19,8 @@ var DatabaseBridgeObj = (function () {
     this.client = undefined;
     this.server = undefined;
     this.received = [];
+    this.clientID = uuid.v4();
+    this.debug = false;
   }
 
   DatabaseBridge.prototype.initialize = function (
@@ -27,13 +29,14 @@ var DatabaseBridgeObj = (function () {
     schemaVersion,
     client
   ) {
-    console.info('WMDB: Initialize', client);
-    console.log('Client', this.client);
-    console.log('Server', this.server);
     var _this = this;
+    _this.debug = client.debug ? true : false;
+    _this.debug && console.info('WMDB: Initialize', client);
+    _this.debug && console.log('Client', _this.client);
+    _this.debug && console.log('Server', _this.server);
     if (client.isServer === true) {
       if (_this.server === undefined) {
-        console.log('Creating Server');
+        _this.debug && console.log('Creating Server');
         _this.server = TcpSocket.createServer(function (socket) {
           socket.on('data', async (data) => {
             // console.log(data);
@@ -44,11 +47,12 @@ var DatabaseBridgeObj = (function () {
             for (var i = 0; i < d.length; i++) {
               try {
                 var cmd = JSON.parse(d[i]);
-                console.log('Server received cmd', cmd);
+                _this.debug && console.log('Server received cmd', cmd);
                 var res = await _this[cmd['func']](...cmd['args']);
                 console.log(res);
                 socket.write(
                   JSON.stringify({
+                    clientID: cmd.clientID,
                     id: cmd.id,
                     res,
                   }) + 'EOM\n'
@@ -73,11 +77,11 @@ var DatabaseBridgeObj = (function () {
         });
 
         this.server.on('connection', (d) => {
-          console.log('Server New Connection', d);
+          _this.debug && console.log('Server New Connection', d);
         });
 
         this.server.on('listening', (d) => {
-          console.log('Server Listening', d);
+          _this.debug && console.log('Server Listening', d);
         });
 
         this.server.on('close', () => {
@@ -111,7 +115,7 @@ var DatabaseBridgeObj = (function () {
             for (var i = 0; i < d.length; i++) {
               try {
                 var d = JSON.parse(d[i]);
-                d.id && _this.received.push(d);
+                d.id && d.clientID === _this.clientID && _this.received.push(d);
               } catch (e) {}
             }
           });
@@ -124,8 +128,7 @@ var DatabaseBridgeObj = (function () {
           resolve({ code: 'ok' });
         }, 300);
       });
-      // setTimeout(() => p.resolve({ code: 'ok' }), 1000);
-      // p.resolve({ code: 'ok' });
+
       return p;
     }
     return DatabaseBridgeNative.initialize(tag, databaseName, schemaVersion);
@@ -137,12 +140,14 @@ var DatabaseBridgeObj = (function () {
     schema,
     schemaVersion
   ) {
-    console.log('WMDB: setUpWithSchema');
+    var _this = this;
+    _this.debug &&
+      console.log('WMDB: setUpWithSchema', _this.client ? 'Client' : 'Server');
 
     if (this.client) {
-      var p = new Promise();
-      setTimeout(() => p.resolve({ code: 'ok' }), 100);
-      // p.resolve({ code: 'ok' });
+      var p = new Promise((resolve, reject) => {
+        resolve({ code: 'ok' });
+      });
       return p;
     } else {
       return DatabaseBridgeNative.setUpWithSchema(
@@ -161,12 +166,17 @@ var DatabaseBridgeObj = (function () {
     fromVersion,
     toVersion
   ) {
-    console.log('WMDB: setUpWithMigrations');
+    var _this = this;
+    _this.debug &&
+      console.log(
+        'WMDB: setUpWithMigrations',
+        _this.client ? 'Client' : 'Server'
+      );
 
     if (this.client) {
-      var p = new Promise();
-      setTimeout(() => p.resolve({ code: 'ok' }), 100);
-      // p.resolve({ code: 'ok' });
+      var p = new Promise((resolve, reject) => {
+        resolve({ code: 'ok' });
+      });
       return p;
     } else {
       return DatabaseBridgeNative.setUpWithMigrations(
@@ -179,25 +189,9 @@ var DatabaseBridgeObj = (function () {
     }
   };
   DatabaseBridge.prototype.find = function (tag, table, id) {
-    console.log('WMDB: find');
-
-    if (this.client) {
-      this.client.write(
-        JSON.stringify({
-          id: uuid.v4(),
-          func: 'find',
-          args: [tag, table, id],
-        }) + 'EOM\n'
-      );
-      return new Promise();
-    } else {
-      return DatabaseBridgeNative.find(tag, table, id);
-    }
-  };
-
-  DatabaseBridge.prototype.query = function (tag, table, query) {
     var _this = this;
-    console.log('WMDB: query', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: find', _this.client ? 'Client' : 'Server');
 
     if (_this.client !== undefined) {
       var p;
@@ -205,6 +199,44 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
+            id,
+            func: 'find',
+            args: [tag, table, id],
+          }) + 'EOM\n'
+        );
+        p = new Promise((resolve, reject) => {
+          var x = setInterval(() => {
+            var y = _this.received.find((d) => d.id === id);
+            if (y) {
+              clearInterval(x);
+              _this.debug && console.log('WMDB: find remote response', y);
+              resolve(y.res);
+            }
+          }, 100);
+        });
+      } catch (e) {
+        console.log('Client query error', e);
+      }
+
+      return p;
+    } else {
+      return DatabaseBridgeNative.find(tag, table, id);
+    }
+  };
+
+  DatabaseBridge.prototype.query = function (tag, table, query) {
+    var _this = this;
+    _this.debug &&
+      console.log('WMDB: query', _this.client ? 'Client' : 'Server');
+
+    if (_this.client !== undefined) {
+      var p;
+      try {
+        var id = uuid.v4();
+        _this.client.write(
+          JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'query',
             args: [tag, table, query],
@@ -215,7 +247,7 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug && console.log('WMDB: query remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -232,7 +264,8 @@ var DatabaseBridgeObj = (function () {
 
   DatabaseBridge.prototype.count = function (tag, query) {
     var _this = this;
-    console.log('WMDB: count', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: count', _this.client ? 'Client' : 'Server');
 
     if (_this.client) {
       var p;
@@ -240,6 +273,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'count',
             args: [tag, query],
@@ -250,7 +284,7 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug && console.log('WMDB: count remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -267,7 +301,8 @@ var DatabaseBridgeObj = (function () {
 
   DatabaseBridge.prototype.batch = function (tag, operations) {
     var _this = this;
-    console.log('WMDB: batch', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: batch', _this.client ? 'Client' : 'Server');
 
     if (_this.client) {
       var p;
@@ -275,6 +310,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'batch',
             args: [tag, operations],
@@ -285,7 +321,7 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug && console.log('WMDB: batch remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -302,7 +338,11 @@ var DatabaseBridgeObj = (function () {
 
   DatabaseBridge.prototype.getDeletedRecords = function (tag, table) {
     var _this = this;
-    console.log('WMDB: getDeletedRecords', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log(
+        'WMDB: getDeletedRecords',
+        _this.client ? 'Client' : 'Server'
+      );
 
     if (_this.client) {
       var p;
@@ -310,6 +350,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'getDeletedRecords',
             args: [tag, table],
@@ -320,7 +361,8 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug &&
+                console.log('WMDB: getDeletedRecords remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -341,10 +383,11 @@ var DatabaseBridgeObj = (function () {
     records
   ) {
     var _this = this;
-    console.log(
-      'WMDB: destroyDeletedRecords',
-      _this.client ? 'Client' : 'Server'
-    );
+    _this.debug &&
+      console.log(
+        'WMDB: destroyDeletedRecords',
+        _this.client ? 'Client' : 'Server'
+      );
 
     if (_this.client) {
       var p;
@@ -352,6 +395,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'destroyDeletedRecords',
             args: [tag, table, records],
@@ -362,7 +406,8 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug &&
+                console.log('WMDB: destroyDeletedRecords remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -382,7 +427,8 @@ var DatabaseBridgeObj = (function () {
     schema,
     schemaVersion
   ) {
-    console.log('WMDB: unsafeResetDatabase');
+    var _this = this;
+    _this.debug && console.log('WMDB: unsafeResetDatabase');
 
     if (this.client) {
       var p = new Promise((resolve, reject) => {
@@ -401,7 +447,8 @@ var DatabaseBridgeObj = (function () {
 
   DatabaseBridge.prototype.getLocal = function (tag, key) {
     var _this = this;
-    console.log('WMDB: getLocal', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: getLocal', _this.client ? 'Client' : 'Server');
 
     if (_this.client) {
       var p;
@@ -409,6 +456,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'getLocal',
             args: [tag, tkey],
@@ -419,7 +467,7 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug && console.log('WMDB: getLocal remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -435,7 +483,8 @@ var DatabaseBridgeObj = (function () {
   };
   DatabaseBridge.prototype.setLocal = function (tag, key, value) {
     var _this = this;
-    console.log('WMDB: setLocal', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: setLocal', _this.client ? 'Client' : 'Server');
 
     if (_this.client) {
       var p;
@@ -443,6 +492,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'setLocal',
             args: [tag, key, value],
@@ -453,7 +503,7 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug && console.log('WMDB: setLocal remote response', y);
               resolve(y.res);
             }
           }, 100);
@@ -470,7 +520,8 @@ var DatabaseBridgeObj = (function () {
 
   DatabaseBridge.prototype.removeLocal = function (tag, key) {
     var _this = this;
-    console.log('WMDB: removeLocal', _this.client ? 'Client' : 'Server');
+    _this.debug &&
+      console.log('WMDB: removeLocal', _this.client ? 'Client' : 'Server');
 
     if (_this.client) {
       var p;
@@ -478,6 +529,7 @@ var DatabaseBridgeObj = (function () {
         var id = uuid.v4();
         _this.client.write(
           JSON.stringify({
+            clientID: _this.clientID,
             id,
             func: 'removeLocal',
             args: [tag, key],
@@ -488,7 +540,8 @@ var DatabaseBridgeObj = (function () {
             var y = _this.received.find((d) => d.id === id);
             if (y) {
               clearInterval(x);
-              console.log(y);
+              _this.debug &&
+                console.log('WMDB: removeLocal remote response', y);
               resolve(y.res);
             }
           }, 100);
